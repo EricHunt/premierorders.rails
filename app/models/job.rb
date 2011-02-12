@@ -34,7 +34,9 @@ class Job < ActiveRecord::Base
   SHIPMENT_OPTIONS = ["PremierRoute", "LTL", "Drop Ship", "Ground", "2nd Day", "Overnight"]
 
   def is_manageable_by(user)
-    franchisee.users.any?{|u| u.id == user.id} || primary_contact == user || placed_by == user
+    (franchisee && franchisee.users.any?{|u| u.id == user.id}) || 
+    primary_contact == user || 
+    placed_by == user
   end
 
   def ship_to
@@ -240,24 +242,32 @@ class Job < ActiveRecord::Base
     job_items.order('tracking_id').select{|job_item| job_item.item && job_item.item.cutrite_id && !job_item.item.cutrite_id.strip.empty?}.map{|job_item| cutrite_item_data(job_item)}
   end
 
-  def inventory_items_total
-    order_items_total = job_items.inject(0.0) do |total, job_item|
-      job_item.inventory? ? total + job_item.compute_total.bind{|t| t.right.toOption}.orSome(job_item.unit_price * job_item.quantity) : total
+  def job_items_total(&item_test)
+    job_items.select{|i| item_test.call(i)}.inject(0.0) do |total, job_item|
+      total + job_item.compute_total.bind{|t| t.right.toOption}.orSome(job_item.unit_price * job_item.quantity)
     end
+  end
 
-    component_inventory_hardware.inject(order_items_total) do |total, hardware_item|
+  def inventory_items_total
+    @inventory_items_total ||= component_inventory_hardware.inject(job_items_total{|i| i.inventory?}) do |total, hardware_item|
       total + hardware_item.compute_total.bind{|t| t.right.toOption}.orSome(0.0)
     end
+
+    @inventory_items_total
   end
 
   def non_inventory_items_total
-    job_items.inject(0.0) do |total, job_item|
-      job_item.inventory? ? total : total + job_item.compute_total.bind{|t| t.right.toOption}.orSome(job_item.unit_price * job_item.quantity)
-    end
+    @non_inventory_items_total ||= job_items_total{|i| !(i.inventory? || i.buyout?)}
+    @non_inventory_items_total
+  end
+
+  def buyout_items_total
+    @buyout_items_total ||= job_items_total{|i| i.buyout?}
+    @buyout_items_total
   end
 
   def total 
-    non_inventory_items_total
+    non_inventory_items_total + buyout_items_total
   end
 
   def component_inventory_hardware
@@ -279,16 +289,20 @@ class Job < ActiveRecord::Base
     @inventory_items
   end
 
+  def to_s
+    "#{Job.model_name.human} #{name}"
+  end
+
   private
 
   def cutrite_item_data(job_item)
     basic_attr_values = [
       job_item.quantity.to_i,
       job_item.comment,
-      job_item.width,
-      job_item.height,
-      job_item.depth,
-      job_item.item.nil? ? nil : job_item.item.cutrite_id,
+      job_item.width.orSome(''),
+      job_item.height.orSome(''),
+      job_item.depth.orSome(''),
+      job_item.item.nil? ? '' : job_item.item.cutrite_id,
       job_item.item_name      
     ]
 
