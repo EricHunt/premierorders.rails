@@ -39,8 +39,12 @@ class Job < ActiveRecord::Base
     placed_by == user
   end
 
+  def bill_to
+    Option.new(billing_address).orElse(Option.new(franchisee.billing_address).map{|ba| ba.address}).orElse(ship_to)
+  end
+
   def ship_to
-    shipping_address || franchisee.shipping_address
+    Option.new(shipping_address).orElse(Option.new(franchisee.shipping_address).map{|sa| sa.address})
   end
 
   def property_names
@@ -106,7 +110,7 @@ class Job < ActiveRecord::Base
       !SKIP_ROWS.any?{|l| r[0].to_s =~ l}
     end
 
-    item_rows.each_with_index do |row, i|
+    item_rows.each_with_index do |row, tracking_id|
       logger.info "Processing data row: #{row.inspect}"
       dvinci_product_id = row[column_indices['Part Number']]
 
@@ -130,7 +134,7 @@ class Job < ActiveRecord::Base
           :quantity  => item_quantity,
           :comment   => special_instructions,
           :unit_price => unit_price,
-          :tracking_id => i + 1
+          :tracking_id => tracking_id + 1
       }
 
       # Add the item reference to the job item, if an item is known
@@ -222,8 +226,8 @@ class Job < ActiveRecord::Base
       name,
       '', '', '',
       franchisee.franchise_name,
-      shipping_address.address1 + (shipping_address.address2 || ''),
-      "#{ship_to.city} #{ship_to.state} #{ship_to.postal_code}",
+      ship_to.map{|addr| "#{addr.address1} #{addr.address2}"}.orSome(''),
+      ship_to.map{|addr| "#{addr.city}, #{addr.state} #{addr.postal_code}"}.orSome(''),
       franchisee.phone,
       franchisee.fax,
       mfg_plant
@@ -238,36 +242,26 @@ class Job < ActiveRecord::Base
     ]
   end
 
-  def cutrite_items_data
-    job_items.order('tracking_id').select{|job_item| job_item.item && job_item.item.cutrite_id && !job_item.item.cutrite_id.strip.empty?}.map{|job_item| cutrite_item_data(job_item)}
-  end
-
-  def job_items_total(&item_test)
-    job_items.select{|i| item_test.call(i)}.inject(0.0) do |total, job_item|
-      total + job_item.compute_total.bind{|t| t.right.toOption}.orSome(job_item.unit_price * job_item.quantity)
-    end
+  def cutrite_items_data(units = :mm)
+    job_items.order('tracking_id').select{|job_item| job_item.item && job_item.item.cutrite_id && !job_item.item.cutrite_id.strip.empty?}.map{|job_item| cutrite_item_data(job_item, units)}
   end
 
   def inventory_items_total
-    @inventory_items_total ||= component_inventory_hardware.inject(job_items_total{|i| i.inventory?}) do |total, hardware_item|
-      total + hardware_item.compute_total.bind{|t| t.right.toOption}.orSome(0.0)
+    @inventory_items_total ||= component_inventory_hardware.inject(total{|i| i.inventory?}) do |tot, hardware_item|
+      tot + hardware_item.net_total
     end
 
     @inventory_items_total
   end
 
-  def non_inventory_items_total
-    @non_inventory_items_total ||= job_items_total{|i| !(i.inventory? || i.buyout?)}
-    @non_inventory_items_total
-  end
-
-  def buyout_items_total
-    @buyout_items_total ||= job_items_total{|i| i.buyout?}
-    @buyout_items_total
-  end
-
   def total 
-    non_inventory_items_total + buyout_items_total
+    if block_given?
+      job_items.select{|i| yield(i)}.inject(BigDecimal.new("0.00")) do |tot, job_item|
+        tot + job_item.net_total
+      end
+    else
+      total{|i| !i.inventory?}
+    end
   end
 
   def component_inventory_hardware
@@ -295,13 +289,13 @@ class Job < ActiveRecord::Base
 
   private
 
-  def cutrite_item_data(job_item)
+  def cutrite_item_data(job_item, units = :mm)
     basic_attr_values = [
       job_item.quantity.to_i,
       job_item.comment,
-      job_item.width.orSome(''),
-      job_item.height.orSome(''),
-      job_item.depth.orSome(''),
+      job_item.width(units).map{|v| "%.1f" % v}.orSome(''),
+      job_item.height(units).map{|v| "%.1f" % v}.orSome(''),
+      job_item.depth(units).map{|v| "%.1f" % v}.orSome(''),
       job_item.item.nil? ? '' : job_item.item.cutrite_id,
       job_item.item_name      
     ]

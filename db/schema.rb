@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110211213114) do
+ActiveRecord::Schema.define(:version => 20110221173135) do
 
   create_table "address_books", :force => true do |t|
     t.string  "address_type"
@@ -58,12 +58,12 @@ ActiveRecord::Schema.define(:version => 20110211213114) do
     t.string   "phone"
     t.string   "fax"
     t.string   "website"
-    t.float    "margin_cabinets"
-    t.float    "margin_accessoried"
-    t.float    "margin_flooring"
+    t.decimal  "margin_cabinets",                  :precision => 8, :scale => 2
+    t.decimal  "margin_accessories",               :precision => 8, :scale => 2
+    t.decimal  "margin_flooring",                  :precision => 8, :scale => 2
     t.string   "job_number_prefix"
-    t.float    "variance_max"
-    t.float    "variance_min"
+    t.decimal  "variance_max",                     :precision => 8, :scale => 2
+    t.decimal  "variance_min",                     :precision => 8, :scale => 2
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "credit_status",      :limit => 32
@@ -104,10 +104,10 @@ ActiveRecord::Schema.define(:version => 20110211213114) do
     t.string   "purchasing",        :limit => 32
     t.string   "purchase_part_id"
     t.string   "type"
-    t.float    "base_price"
+    t.decimal  "base_price",                      :precision => 8, :scale => 2
     t.string   "vendor"
     t.float    "weight"
-    t.float    "install_cost"
+    t.decimal  "install_cost",                    :precision => 8, :scale => 2
     t.float    "rebate_factor"
     t.float    "retail_multiplier"
   end
@@ -124,17 +124,17 @@ ActiveRecord::Schema.define(:version => 20110211213114) do
   end
 
   create_table "job_items", :force => true do |t|
-    t.integer  "job_id",         :null => false
+    t.integer  "job_id",                                       :null => false
     t.integer  "item_id"
     t.string   "ingest_id"
     t.float    "quantity"
     t.string   "comment"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.float    "unit_price"
+    t.decimal  "unit_price",     :precision => 8, :scale => 2
     t.integer  "tracking_id"
     t.string   "ingest_desc"
-    t.float    "override_price"
+    t.decimal  "override_price", :precision => 8, :scale => 2
   end
 
   create_table "job_properties", :force => true do |t|
@@ -178,6 +178,7 @@ ActiveRecord::Schema.define(:version => 20110211213114) do
     t.string   "ship_method"
     t.integer  "primary_contact_id"
     t.text     "notes"
+    t.integer  "billing_address_id"
   end
 
   create_table "properties", :force => true do |t|

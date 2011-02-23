@@ -9,12 +9,12 @@
         <dt>Bill To</dt>
         <dd>
           <%= @job.franchisee.franchise_name -%>
-          <% if @job.ship_to %>
-            <br/><%= @job.ship_to.address1 -%>
-            <% if @job.ship_to.address2 %>
-              <br/><%= @job.ship_to.address2 -%>
+          <% @job.bill_to.each do |addr| %>
+            <br/><%= addr.address1 -%>
+            <% if addr.address2 %>
+              <br/><%= addr.address2 -%>
             <% end %>
-            <br/><%= @job.ship_to.city -%>, <%= @job.ship_to.state -%> <%= @job.ship_to.postal_code -%>
+            <br/><%= addr.city -%>, <%= addr.state -%> <%= addr.postal_code -%>
           <% end %>
         </dd>
       </dl>
@@ -24,12 +24,12 @@
         <dt>Ship To</dt>
         <dd>
           <%= @job.franchisee.franchise_name -%>
-          <% if @job.ship_to %>
-            <br/><%= @job.ship_to.address1 -%>
-            <% if @job.ship_to.address2 %>
-              <br/><%= @job.ship_to.address2 -%>
+          <% @job.ship_to.each do |addr| %>
+            <br/><%= addr.address1 -%>
+            <% if addr.address2 %>
+              <br/><%= addr.address2 -%>
             <% end %>
-            <br/><%= @job.ship_to.city -%>, <%= @job.ship_to.state -%> <%= @job.ship_to.postal_code -%>
+            <br/><%= addr.city -%>, <%= addr.state -%> <%= addr.postal_code -%>
           <% end %>
         </dd>
       </dl>
@@ -87,13 +87,13 @@
   </dl>
 
   <dl class="items">
-    <dt>Items ($<%= "%0.2f" % @job.non_inventory_items_total %>)</dt>
-    <dd><%= render :partial => 'items_table', :locals => {:job_items => @job.job_items.order('tracking_id').select{|i| !(i.inventory? || i.buyout?)}} %></dd>
+    <dt>Manufactured Items ($<%= "%0.2f" % @job.total{|i| i.purchasing_type? 'Manufactured'} %>)</dt>
+    <dd><%= render :partial => 'items_table', :locals => {:job_items => @job.job_items.order('tracking_id').select{|i| i.purchasing_type? 'Manufactured'}} %></dd>
   </dl>
   
   <dl class="items">
-    <dt>Buyout Items ($<%= "%0.2f" % @job.buyout_items_total %>)</dt>
-    <dd><%= render :partial => 'items_table', :locals => {:job_items => @job.job_items.order('tracking_id').select{|i| i.buyout?}} %></dd>
+    <dt>Purchased, Buyout &amp; Other Items ($<%= "%0.2f" % @job.total{|i| i.purchasing_type? 'Purchased', 'Buyout', '(unavailable)'} %>)</dt>
+    <dd><%= render :partial => 'items_table', :locals => {:job_items => @job.job_items.order('tracking_id').select{|i| i.purchasing_type? 'Purchased', 'Buyout', '(unavailable)'}} %></dd>
   </dl>
 
   <div class="inventory_items<%= @job.inventory_items.empty? ? " inventory_items_empty" : "" %>">
@@ -108,19 +108,16 @@
 
   <div id="quote-footer">
     <dl class="franchisee-name">
-        <dt>PremierGarage Systems LLC</dt>
-        <dd>
-          21405 N. 15th Lane <br> Phoenix AZ 85027
-        </dd>
+        <dt>PremierGarage Systems</dt>
     </dl>
 
     <dl class="franchisee-phone">
-      <dt>CUSTOMER SERVICE: 866-761-8981</dt>
+      <dt>Toll Free: 866-761-8981</dt>
       <dd></dd>
     </dl>
 
     <dl class="franchisee-fax">
-      <dt>FAX: 480.483.3795</dt>
+      <dt>Fax: 480.483.3795</dt>
       <dd></dd>
     </dl>
 
@@ -183,7 +180,7 @@
     table {width: 100%; border-collapse: collapse;}
     td, th {border: 1px solid #ccc; padding: .1em .25em;}
     th {background-color: #aaa;}
-    tr:nth-child(odd)   { background-color:#eee; }
+    /* tr:nth-child(odd)   { background-color:#eee; } */
 
     #header-leftcol {float: left; width: 55%;}
     #header-rightcol {float: right; width: 45%;}

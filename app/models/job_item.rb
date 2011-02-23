@@ -1,7 +1,10 @@
 require 'util/option'
 require 'util/either'
+require 'expressions'
 
 class JobItem < ActiveRecord::Base
+  include Expressions
+
 	belongs_to :job
   belongs_to :item
 	has_many   :job_item_properties, :dependent => :destroy, :extend => Properties::Association
@@ -11,29 +14,36 @@ class JobItem < ActiveRecord::Base
     @dimensions_property
   end
 
+  def purchasing_type?(*types)
+    types.any? do |type|
+      item_purchasing.casecmp(type) == 0 || 
+      ingest_id.strip[-1,1].casecmp(type[0...1]) == 0
+    end
+  end
+
   def inventory?
-    (item && item.purchasing == 'Inventory') || ingest_id.strip[-1,1] == 'I'
+    purchasing_type?('Inventory')
   end
 
   def buyout?
-    (item && item.purchasing == 'Buyout') || ingest_id.strip[-1,1] == 'B'
+    purchasing_type?('Buyout')
   end
 
-  def width
+  def width(units = :in)
     dimensions_property.bind do |p|
-      Option.call(:width, p)
+      Option.call(:width, p, units)
     end
   end
 
-  def height
+  def height(units = :in)
     dimensions_property.bind do |p|
-      Option.call(:height, p)
+      Option.call(:height, p, units)
     end
   end
 
-  def depth
+  def depth(units = :in)
     dimensions_property.bind do |p|
-      Option.call(:depth, p)
+      Option.call(:depth, p, units)
     end
   end
 
@@ -49,19 +59,8 @@ class JobItem < ActiveRecord::Base
     item.nil? ? "#{ingest_desc}: #{ingest_id}" : item.name
   end
 
-  def hardware_cost
-    inventory_hardware.values.inject(0.0) {|total, i| total + i.total_price}
-  end
-
-  def compute_unit_price
-    Option.new(item).bind do |i|
-      begin
-        i.rebated_cost_expr(:in, color.orSome(nil), []).map {|expr| dimension_eval(expr)}
-      rescue
-        logger.error $!.backtrace.join("\n")
-        Option.some(Either.left($!.message))
-      end
-    end
+  def item_purchasing
+    item.nil? ? "(unavailable)" : item.purchasing
   end
 
   def inventory_hardware
@@ -80,44 +79,60 @@ class JobItem < ActiveRecord::Base
     @inventory_hardware
   end
 
-  def weight
+  def weight(units = :in)
     Option.new(item).bind do |i|
       begin
-        i.weight_expr(:in, []).map {|expr| dimension_eval(expr)}
+        i.weight_expr(units, []).map {|expr| dimension_eval(expr)}
       rescue
         Option.some(Either.left($!.message))
       end
     end
   end
 
-  def install_cost
+  def install_cost(units = :in)
     Option.new(item).bind do |i|
       begin
-        i.install_cost_expr(:in, []).map {|expr| dimension_eval(expr)}
+        i.install_cost_expr(units, []).map {|expr| dimension_eval(expr)}
       rescue
         Option.some(Either.left($!.message))
       end
     end
+  end
+
+  def hardware_cost
+    inventory_hardware.values.inject(BigDecimal.new("0.00")) {|total, i| total + i.total_price}
+  end
+
+  def compute_unit_price(units = :in)
+    Option.new(item).bind do |i|
+      begin
+        i.rebated_cost_expr(units, color.orSome(nil), []).map {|expr| dimension_eval(expr)}
+      rescue
+        logger.error "Error computing unit price: #{$!.message}\n #{$!.backtrace.join("\n")}"
+        Option.some(Either.left($!.message))
+      end
+    end
+  end
+
+  def compute_total(units = :in)
+    compute_unit_price(units).map{|e| e.right.map{|t| t * quantity}}
+  end
+
+  def net_unit_price(units = :in)
+    compute_unit_price(units).bind{|p| p.right.toOption.map{|v| v - hardware_cost}}.orSome(unit_price)
+  end
+
+  def net_total(units = :in)
+    net_unit_price(units) * quantity
   end
 
   def dimension_eval(expr)
-    w = width.orSome(nil)
-    h = height.orSome(nil)
-    d = depth.orSome(nil)
-    compiled_expr = expr.compile.gsub(/W/,'w').gsub(/H/,'h').gsub(/D/,'d')
+    vars = {ZERO => BigDecimal.new("0.00")}.merge(width.to_h(W)).merge(height.to_h(H)).merge(depth.to_h(D))
     begin
-      Either.right(eval(compiled_expr))
+      Either.right(expr.evaluate(vars))
     rescue
-      logger.error("Unable to evaluate expression (#{compiled_expr}) at w = #{w}, h = #{h}, d = #{d}")
-      Either.left("Unable to evaluate expression (#{compiled_expr}) at w = #{w}, h = #{h}, d = #{d}")
+      logger.error("Unable to evaluate expression (#{expr}) at #{vars.inspect}: \n#{$!.message}")
+      Either.left("Unable to evaluate expression (#{expr}) at #{vars.inspect}")
     end
-  end
-
-  def compute_total
-    compute_unit_price.map{|e| e.right.map{|t| t * quantity}}
-  end
-
-  def hardware_total
-    hardware_cost * quantity
   end
 end

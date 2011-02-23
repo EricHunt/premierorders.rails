@@ -1,6 +1,7 @@
 require 'json'
 require 'util/option.rb'
 require 'expressions.rb'
+require 'bigdecimal'
 
 module ModularProperty
   def value_structure
@@ -54,6 +55,7 @@ module Properties
         case type
           when :int   then string_value.to_i
           when :float then string_value.to_f
+          when :decimal then BigDecimal.new(string_value.to_s)
           else string_value
         end
       else
@@ -332,11 +334,11 @@ class Property < ActiveRecord::Base
   module Surcharge
     include Properties::JSONProperty
     def self.value_structure
-      [[:price , :float]]
+      [[:price , :decimal]]
     end
 
     def price
-      extract(:price).to_f
+      extract(:price, :decimal)
     end
   end
 
@@ -351,7 +353,7 @@ class Property < ActiveRecord::Base
         [:cutrite_code , :string],
         [:thickness , :float],
         [:thickness_units , Properties::LinearConversions::UNITS],
-        [:price , :float],
+        [:price , :decimal],
         [:price_units , Properties::SquareConversions::UNITS],
         [:weight , :float],
         [:waste_factor , :float]
@@ -378,6 +380,10 @@ class Property < ActiveRecord::Base
       extract(:price_units).to_sym
     end
 
+    def price
+      extract(:price, :decimal)
+    end
+
     def waste_factor
       Option.fromString(extract(:waste_factor)).map{|f| f.to_f + 1.0}
     end
@@ -385,7 +391,7 @@ class Property < ActiveRecord::Base
     def cost_expr(l_expr, w_expr, units)
       sqft_expr = mult(l_expr, w_expr)
       sqft_expr_waste = waste_factor.map{|f| mult(sqft_expr, term(f))}.orSome(sqft_expr)
-      mult(sqft_expr_waste, term(sq_convert(extract(:price).to_f, units, price_units)))
+      mult(sqft_expr_waste, term(sq_convert(price, units, price_units)))
     end
   end
 
@@ -425,13 +431,13 @@ class Property < ActiveRecord::Base
 
     def self.value_structure
       [
-        [:price , :float],
+        [:price , :decimal],
         [:price_units , Properties::LinearConversions::UNITS]
       ]
     end
 
     def price(units)
-      convert(extract(:price).to_f, units, extract(:price_units).to_sym)
+      convert(extract(:price, :decimal), units, extract(:price_units).to_sym)
     end
 
     def cost_expr(units, length_expr)
