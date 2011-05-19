@@ -1,3 +1,5 @@
+require 'set'
+
 class ProductionBatch < ActiveRecord::Base
   include Cutrite
 
@@ -12,6 +14,20 @@ class ProductionBatch < ActiveRecord::Base
     item_lines = [CUTRITE_ITEMS_HEADER] + cutrite_items_data
 
     (job_lines + item_lines)
+  end
+
+  def open?
+    status == 'closed'
+  end
+
+  def closed?
+    status == 'closed'
+  end
+
+  def jobs
+    Set.new(job_items.map{|i| i.job}).to_a.sort do |a, b|
+      (a.job_number || a.name) <=> (b.job_number || b.name)
+    end
   end
 
   def cutrite_batch_data

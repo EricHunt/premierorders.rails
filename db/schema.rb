@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110225185236) do
+ActiveRecord::Schema.define(:version => 20110503144638) do
 
   create_table "address_books", :force => true do |t|
     t.string  "address_type"
@@ -70,6 +70,11 @@ ActiveRecord::Schema.define(:version => 20110225185236) do
     t.text     "notes"
   end
 
+  create_table "item_categories", :force => true do |t|
+    t.string "category"
+    t.string "sort_group"
+  end
+
   create_table "item_component_properties", :force => true do |t|
     t.integer "item_component_id"
     t.integer "property_id"
@@ -110,6 +115,23 @@ ActiveRecord::Schema.define(:version => 20110225185236) do
     t.decimal  "install_cost",                    :precision => 8, :scale => 2
     t.float    "rebate_factor"
     t.float    "retail_multiplier"
+    t.decimal  "sell_price",                      :precision => 8, :scale => 2
+    t.string   "category"
+    t.boolean  "in_catalog",                                                    :default => false
+    t.string   "ship_by",                                                       :default => "standard"
+    t.integer  "bulk_qty"
+    t.integer  "position"
+  end
+
+  create_table "job_item_components", :force => true do |t|
+    t.integer  "item_id"
+    t.integer  "job_item_id"
+    t.decimal  "unit_cost",     :precision => 8, :scale => 2
+    t.string   "cost_calc_err"
+    t.integer  "quantity"
+    t.string   "qty_calc_err"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "job_item_properties", :force => true do |t|
@@ -124,18 +146,25 @@ ActiveRecord::Schema.define(:version => 20110225185236) do
   end
 
   create_table "job_items", :force => true do |t|
-    t.integer  "job_id",                                            :null => false
+    t.integer  "job_id",                                                :null => false
     t.integer  "item_id"
     t.string   "ingest_id"
     t.float    "quantity"
     t.string   "comment"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.decimal  "unit_price",          :precision => 8, :scale => 2
+    t.decimal  "unit_price",              :precision => 8, :scale => 2
     t.integer  "tracking_id"
     t.string   "ingest_desc"
-    t.decimal  "override_price",      :precision => 8, :scale => 2
+    t.decimal  "override_price",          :precision => 8, :scale => 2
     t.integer  "production_batch_id"
+    t.string   "cache_calculation_units"
+    t.string   "pricing_cache_status"
+    t.decimal  "computed_unit_price",     :precision => 8, :scale => 2
+    t.decimal  "unit_hardware_cost",      :precision => 8, :scale => 2
+    t.decimal  "unit_install_cost",       :precision => 8, :scale => 2
+    t.float    "unit_weight"
+    t.string   "sales_category"
   end
 
   create_table "job_properties", :force => true do |t|
@@ -155,8 +184,17 @@ ActiveRecord::Schema.define(:version => 20110225185236) do
     t.datetime "updated_at"
   end
 
+  create_table "job_state_transitions", :force => true do |t|
+    t.integer  "job_id"
+    t.integer  "changed_by_id"
+    t.string   "prior_status"
+    t.string   "new_status"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "jobs", :force => true do |t|
-    t.integer  "franchisee_id",                         :null => false
+    t.integer  "franchisee_id",                                               :null => false
     t.integer  "customer_id"
     t.integer  "shipping_address_id"
     t.string   "name"
@@ -180,6 +218,8 @@ ActiveRecord::Schema.define(:version => 20110225185236) do
     t.integer  "primary_contact_id"
     t.text     "notes"
     t.integer  "billing_address_id"
+    t.string   "type",                                  :default => "Job"
+    t.string   "source",                                :default => "dvinci"
   end
 
   create_table "production_batches", :force => true do |t|

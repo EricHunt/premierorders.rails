@@ -28,10 +28,10 @@ class Ability
     can [:read, :update], User, :id => user.id
  
     if user.role? :franchisee
-      can [:create, :read, :update, :place_order], Job do |job|
+      can [:create, :read, :place_order], Job do |job|
         job.new_record? || job.is_manageable_by(user)  
       end
-      can :destroy, Job do |job|
+      can [:update, :destroy], Job do |job|
         job.is_manageable_by(user) && (job.status.nil? || job.status == 'Created')
       end
       can [:create, :read, :update, :destroy], [JobProperty, JobItem] do |x|
@@ -47,21 +47,37 @@ class Ability
       end
     end
 
+    if user.role? :franchise_support
+      can [:read], [Job, JobProperty, JobItem, JobItemProperty, Franchisee, Address]
+      can [:create, :update, :destroy], Job do |job|
+        (job.status.nil? || job.status == 'Created')
+      end
+    end
+
     if user.role? :product_admin
-      can :manage, [Item, ItemComponent, ItemProperty, Property, PropertyValue, Job, JobProperty, JobItem, JobItemProperty]
+      can :manage, [Item, ItemComponent, ItemProperty, Property, PropertyValue]
+      can [:create, :read, :update, :cutrite, :download], [Job, JobProperty, JobItem, JobItemProperty]
+      can :pg_internal_cap, :all
     end
 
     if user.role? :customer_service
       can :read, [Item, ItemComponent, ItemProperty, Property, PropertyValue, Franchisee, FranchiseeContact]
-      can :manage, [Job, JobProperty, JobItem, JobItemProperty, User, Address]
+      can :manage, [ProductionBatch, User, Address]
+      can [:create, :read, :update, :cutrite, :download], [Job, JobProperty, JobItem, JobItemProperty]
+      can :pg_internal_cap, :all
     end
 
     if user.role? :accounting
-      can :read, [Item, ItemComponent, ItemProperty, Property, PropertyValue, Job, JobProperty, JobItem, JobItemProperty]
+      can :view_reports, :all
+      can :read, [Item, ItemComponent, ItemProperty, Property, PropertyValue]
+      can [:create, :read, :update, :cutrite, :download], [Job, JobProperty, JobItem, JobItemProperty]
       can :manage, [User, Franchisee, FranchiseeContact, Address]
+      can :pg_internal_cap, :all
     end
 
     if user.role? :admin
+      can :view_reports, :all
+      can :pg_internal_cap, :all
       can :manage, :all
     end
   end

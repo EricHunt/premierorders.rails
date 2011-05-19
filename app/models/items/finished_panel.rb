@@ -1,15 +1,14 @@
-require 'property.rb'
-require 'items/item_materials.rb'
-require 'items/panel.rb'
+require 'fp'
+require 'properties'
 
-class FinishedPanel < Item
-  include ItemMaterials, PanelEdgePricing, Items::Margins
+class Items::FinishedPanel < Item
+  include Items::ItemMaterials, Items::PanelEdgePricing, Items::Margins
 
-  def self.required_properties
+  def self.optional_properties
     if self.respond_to?(:banded_edges) && !self.banded_edges.empty?
-      [Panel::MATERIAL, PropertyDescriptor.new(:edge_band, banded_edges.keys, [Property::EdgeBand])]
+      [Items::Panel::MATERIAL, Properties::PropertyDescriptor.new(:edge_band, banded_edges.keys, [Property::EdgeBand])]
     else
-      [Panel::MATERIAL]
+      [Items::Panel::MATERIAL]
     end
   end
 
@@ -18,7 +17,7 @@ class FinishedPanel < Item
   end
 
   def material_descriptor
-    Panel::MATERIAL
+    Items::Panel::MATERIAL
   end
 
   def l_expr
@@ -29,18 +28,24 @@ class FinishedPanel < Item
     W
   end
 
-  def cost_expr(units, color, contexts)
+  def cost_expr(query_context)
     edgeband_cost = if !self.class.respond_to?(:banded_edges) || self.class.banded_edges.empty? 
       Option.none()
     else
-      edgeband_cost_expr(self.class.banded_edges, units, color)
+      edgeband_cost_expr(self.class.banded_edges, query_context.units, query_context.color)
     end
 
-    material_cost = material(Panel::MATERIAL, color).cost_expr(l_expr, w_expr, units)
+    material_cost = material(Items::Panel::MATERIAL, query_context.color).cost_expr(l_expr, w_expr, query_context.units)
     subtotal = edgeband_cost.map{|e| sum(material_cost, e)}.orSome(material_cost)
     item_total = apply_margin(subtotal)
     
-    super(units, color, contexts).map{|e| sum(e, item_total)}.orElse(Option.some(item_total))
+    Option.append(item_total, super, Semigroup::SUM)
+  end
+
+  def weight_expr(query_context)
+    material_weight = material(Items::Panel::MATERIAL, query_context.color).weight_expr(l_expr, w_expr, query_context.units)
+    Option.append(material_weight, super, Semigroup::SUM)
   end
 end
+
 

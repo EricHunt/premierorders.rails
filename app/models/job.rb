@@ -1,10 +1,11 @@
 require 'rexml/document'
 require 'csv'
 require 'json'
-require 'item.rb'
-require 'property.rb'
-require 'util/option'
-require 'monoid'
+require 'fp'
+require 'item_queries'
+require 'properties'
+require 'format_exception'
+require 'set'
 
 class Job < ActiveRecord::Base
   include Cutrite
@@ -17,25 +18,53 @@ class Job < ActiveRecord::Base
   belongs_to :shipping_address, :class_name => 'Address'
   has_many   :job_items, :dependent => :destroy
   has_many   :job_properties, :dependent => :destroy, :extend => Properties::Association
+  has_many   :job_state_transitions, :dependent => :destroy
 
   has_attached_file :dvinci_xml
 
-  STATUS_OPTIONS = [
-    "Created",
-    "Placed",
-    "Confirmed",
-    "On Hold",
-    "Ready For Production",
-    "In Production",
-    "Ready to Ship",
-    "Hold Shipment",
-    "Shipped",
-    "Cancelled",
+  searchable do
+    text :name, :boost => 2.0
+    text :so_number do 
+      [job_number, job_number.gsub(/\s*/,''), job_number.gsub(/so\s*-\s*/i, '')] if job_number
+    end
+    string :status
+    string :placement_date
+    text :job_item_names do
+      job_items.map{|job_item| job_item.item_name}
+    end
+  end
+
+  STATUS_GROUPS = [
+    [
+      "Created",
+      "Placed",
+      "On Hold",
+      "Confirmed"
+    ],
+    [
+      "Ready For Production",
+      "In Production"
+    ],
+    [
+      "Ready for Packing",
+      "Ready to Ship",
+      "Hold Shipment",
+    ],
+    [
+      "Shipped",
+      "Cancelled"
+    ]
   ]
+
+  STATUS_OPTIONS = STATUS_GROUPS.flatten
 
   SHIPMENT_OPTIONS = ["PremierRoute", "LTL", "Drop Ship", "Ground", "2nd Day", "Overnight"]
 
   MFG_PLANT_OPTIONS = ['Phoenix', 'Atlanta']
+
+  def self.status_group_changed?(before, after)
+    STATUS_GROUPS.select{|v| v.include?(before)} != STATUS_GROUPS.select{|v| v.include?(after)}
+  end
 
   def is_manageable_by(user)
     (franchisee && franchisee.users.any?{|u| u.id == user.id}) || 
@@ -55,6 +84,16 @@ class Job < ActiveRecord::Base
     job_items.inject([]) do |names, job_item|
       names + job_item.job_item_properties.map{|a| a.name}
     end
+  end
+
+  def has_status?(*statii)
+    statii.any? do |stat|
+      (status.nil? && stat == 'Created') || (status && stat.casecmp(status) == 0)
+    end
+  end
+
+  def placed?
+    !(placement_date.nil? || status == 'Created')
   end
 
   def decompose_xml(xml)
@@ -199,43 +238,31 @@ class Job < ActiveRecord::Base
 
   # returns any common batch id for the order; nil if no batch is set, and -1 if items
   # are in multiple batches.
-  def production_batch_id
-    result = job_items.inject(Option.none) do |v, ji|
-      current = Option.new(ji.production_batch_id)
-      v.orElse(current).bind do |previous|
-        previous == ji.production_batch_id || previous == -1 ? current : Some.new(-1)
-      end
+  def production_batches
+    job_items.inject(Set.new) do |v, job_item|
+      job_item.production_batch.nil? ? v : v.add(job_item.production_batch)
     end
+  end
 
-    result
+  def production_batches_closed?
+    job_items.select{|i| i.purchasing_type?('Manufactured')}.all?{|i| i.production_batch_closed?}
   end
 
   def update_production_batch(batch)
-    ok = batch && batch.status != 'closed'
-    if ok
+    if batch && batch.closed?
+      Left.new("Unable to update production batch for #{name}: batch is closed.")
+    elsif production_batches_closed?
+      Left.new("Unable to update production batch for #{name}: all items already assigned to closed batches.")
+    else
       job_items.each do |job_item|
-        if job_item.production_batch 
-          unless job_item.production_batch.status == 'closed'
-            job_item.production_batch = batch
-            job_item.save
-            ok = true
-          end
-        else
+        if job_item.purchasing_type?('Manufactured') && !job_item.production_batch_closed?
           job_item.production_batch = batch
           job_item.save
-          ok = true
         end
       end
-    end
 
-    if ok
-      save
-    else
-      logger.error("Unable to update production batch for #{name}: batch is closed, or all items already assigned to other closed batches.")
-      errors << "Unable to update production batch for #{name}: batch is closed, or all items already assigned to other closed batches."
+      Right.new(batch)
     end
-
-    ok
   end
 
   CUTRITE_JOB_HEADER = ['', 'Job Name', '', '', ''] + CUTRITE_ADDRESS_HEADER
@@ -282,11 +309,13 @@ class Job < ActiveRecord::Base
     end
   end
 
-  def component_inventory_hardware
-    hardware_query = HardwareQuery.new do |item|
-      item.purchasing == 'Inventory'
+  def total_weight
+    job_items.inject(0.00) do |tot, job_item|
+      tot + ((job_item.quantity || 0) * (job_item.unit_weight || 0))
     end
+  end
 
+  def component_inventory_hardware
     aggregated = job_items.inject({}) do |m, job_item|
       m.merge(job_item.inventory_hardware) do |k, h1, h2|
         h1 + h2
@@ -301,33 +330,19 @@ class Job < ActiveRecord::Base
     @inventory_items
   end
 
+  def update_cached_values
+    job_items.each do |job_item|
+      job_item.update_cached_values
+      job_item.save
+    end
+  end
+
+  def sales_categories
+    "#{source} #{job_items.inject(Set.new) {|m, v| v.sales_category.blank? ? m : m.add(v.sales_category)}.to_a.sort.join(", ")}".titlecase
+  end
+
   def to_s
     "#{Job.model_name.human} #{name}"
   end
 end
 
-class ColorQuery < ItemQuery
-  def initialize(property_family, dvinci_color_code, &value_test)
-    super(Monoid::UNIQ)
-    @property_family = property_family
-    @dvinci_color_code = dvinci_color_code
-    @value_test = value_test
-  end  
-
-  def query_property(property)
-    pv = Option.iif(property.family == @property_family) do
-      property.property_values.detect do |v|
-        v.respond_to?(:dvinci_id) && 
-        v.dvinci_id == @dvinci_color_code &&
-        (@value_test.nil? || @value_test.call(v))
-      end
-    end
-  end
-end
-
-class FormatException < RuntimeError
-  attr :message
-  def initialize(message)
-    @message = message
-  end
-end

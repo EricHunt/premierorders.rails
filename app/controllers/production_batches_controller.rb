@@ -4,7 +4,7 @@ class ProductionBatchesController < ApplicationController
   # GET /production_batches
   # GET /production_batches.xml
   def index
-    @production_batches = ProductionBatch.all
+    @production_batches = ProductionBatch.order(:created_at)
 
     respond_to do |format|
       format.html # index.html.erb
@@ -62,7 +62,7 @@ class ProductionBatchesController < ApplicationController
 
     respond_to do |format|
       if @production_batch.update_attributes(params[:production_batch])
-        format.html { redirect_to production_batches_patch }
+        format.html { redirect_to production_batches_path }
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
