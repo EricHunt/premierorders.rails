@@ -314,7 +314,7 @@
 
     <dt>Item Category</dt>
     <dd><%= select_tag 'category', 
-            options_for_select(Item::categories.map{|v| [v.titlecase, v]}, params[:category]),
+            options_for_select(Item.categories.map{|v| [v.titlecase, v]}, params[:category]),
             :id => 'item_category_filter', :include_blank => true %></dd>
   </dl>
   <br/>
