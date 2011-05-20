@@ -20,15 +20,15 @@
                    options_for_select(item_type_option_values, params[:type]),
                    :id => 'item_type_filter', :include_blank => true %>
 
-    <strong>Item Category: </strong> 
+    <strong>&nbsp;&nbsp;&nbsp;&nbsp;Item Category: </strong> 
     <%= select_tag 'category', 
-                   options_for_select(Item::categories.map{|v| [v.titlecase, v]}, params[:category]),
+                   options_for_select(Item.categories.map{|v| [v.titlecase, v]}, params[:category]),
                    :id => 'item_category_filter', :include_blank => true %>
 
     <% if search %> 
-      <strong>Search: </strong> 
+      <strong>&nbsp;&nbsp;&nbsp;&nbsp;Search: </strong> 
       <input type="text" name="search" id="item_search" value="<%= params[:search] %>"/>
-      <strong>Catalog Items Only: </strong> 
+      <strong>&nbsp;&nbsp;&nbsp;&nbsp;Catalog Items Only: </strong> 
       <input type="checkbox" name="in_catalog" id="item_in_catalog"<%= params[:in_catalog].blank? ? '' : ' checked' %>/>
     <% end %>
   </span>

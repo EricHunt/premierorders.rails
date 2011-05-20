@@ -58,7 +58,7 @@ class Job < ActiveRecord::Base
 
   STATUS_OPTIONS = STATUS_GROUPS.flatten
 
-  SHIPMENT_OPTIONS = ["PremierRoute", "LTL", "Drop Ship", "Ground", "2nd Day", "Overnight"]
+  SHIPMENT_OPTIONS = ["PremierRoute", "LTL", "Drop Ship", "2nd Day", "Overnight"]
 
   MFG_PLANT_OPTIONS = ['Phoenix', 'Atlanta']
 

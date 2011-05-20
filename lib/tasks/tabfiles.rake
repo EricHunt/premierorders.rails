@@ -1,4 +1,4 @@
-require 'db/seed_loader.rb'
+require ::Rails.root.to_s + '/db/seed_loader.rb'
 
 namespace :tabfile do
   task :dump => :environment do
