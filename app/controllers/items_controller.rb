@@ -251,7 +251,8 @@ class ItemsController < ApplicationController
     type_map = Item.component_association_modules(Items.const_get(params[:mod].demodulize)).values.flatten.inject([]) do |result, cmod|
       result << { 
         :association_type => cmod.to_s.demodulize,
-        :component_types  => ItemComponent.component_modules(cmod).map{|ct| ct.to_s.demodulize} 
+        :component_types  => ItemComponent.component_modules(cmod).map{|ct| ct.to_s#.demodulize
+          } 
       }
     end
 
