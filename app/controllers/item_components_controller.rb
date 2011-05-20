@@ -49,7 +49,7 @@ class ItemComponentsController < ApplicationController
 
   def property_descriptors
     if request.xhr?
-      render :json => Property.descriptors(Items.const_get(params[:mod])).to_json
+      render :json => Property.descriptors(Items.const_get(params[:mod].demodulize)).to_json
     end
   end
 
