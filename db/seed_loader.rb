@@ -393,6 +393,11 @@ class SeedLoader
       with_tabfile_rows(filename) do |row, item_dvinci_key, item_desc, purchasing, category, color, color_key, color_match|
         part_id, catalog_id, dvinci_id, description, flag, price, *xs = row
 
+        query_context = ItemQueries::QueryContext.new(
+          :units => :in, 
+          :color => color_key.gsub(/^[19]/,'0')
+        )
+
         item = Item.find_by_dvinci_id(item_dvinci_key)
         if item.nil? 
           err.puts "Could not find item with dvinci id #{item_dvinci_key} for row #{row.inspect}" 
@@ -400,7 +405,7 @@ class SeedLoader
           out.puts(row.join("\t").strip)
         else
           begin
-            item_pricing_expr = item.retail_price_expr(:in, color_key.gsub(/^[19]/,'0'), []).map{|e| e.compile}.orLazy do
+            item_pricing_expr = item.retail_price_expr(query_context).map{|e| e.compile}.orLazy do
               err.puts "Could not determine pricing expression for row #{row.inspect}"
             end
 
@@ -411,7 +416,8 @@ class SeedLoader
             display_name = color_match ? "#{item.name.gsub(/ \| #{color}/, '')} | #{color}" : item.name
             out.puts(([part_id, catalog_id, dvinci_id, display_name, flag, item_pricing_expr] + xs).join("\t").strip)
           rescue
-            err.puts("Error in calculating prices for row #{row.inspect}: #{$!.backtrace[0]}")
+            err.puts("Error in calculating prices for row #{row.inspect}: #{$!}")
+            $!.backtrace[0..5].each {|l| err.puts(l) }
           end
         end
 
