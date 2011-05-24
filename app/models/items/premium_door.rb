@@ -63,7 +63,7 @@ module Items
     end
 
     def weight_expr(query_context)
-      material_weight = material(DOOR_MATERIAL, color).weight_expr(H, W, units)
+      material_weight = material(DOOR_MATERIAL, query_context.color).weight_expr(H, W, query_context.units)
       Option.append(material_weight, super, Semigroup::SUM)
     end
   end

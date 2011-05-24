@@ -1,6 +1,16 @@
 require 'bigdecimal'
 require 'fp'
 
+class Float
+  def compile
+    self
+  end
+  
+  def evaluate(vars)
+    self
+  end
+end
+
 module Expressions
   class Expr
     include Expressions
@@ -31,7 +41,7 @@ module Expressions
       begin
         expr_eval(vars)  
       rescue
-        raise $!, "Error evaluating #{self} at #{vars.inspect}: #{$!.message}", $!.backtrace
+        raise $!, "Error evaluating #{self} at #{vars.inspect}: #{$!.message}\n #{$!.backtrace.join("\n")}", $!.backtrace
       end
     end
 

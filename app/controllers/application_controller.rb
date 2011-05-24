@@ -18,7 +18,7 @@ class ApplicationController < ActionController::Base
   def manifest
     text = <<-MANIFEST
       CACHE MANIFEST
-      # version 1.0.45
+      version 1.0.46
       /offline.html
       /catalog_orders
 
@@ -56,7 +56,7 @@ class ApplicationController < ActionController::Base
       /javascripts/catalog_orders.js                       /javascripts/catalog_orders.js
 
       # default fallback route
-      /                                                    /offline.html
+      #/                                                    /offline.html
 
       NETWORK:
       /catalog_orders/catalog_json
