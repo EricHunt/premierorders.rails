@@ -3,6 +3,23 @@ class ReportsController < ApplicationController
     authorize! :view_reports, :all
   end
   
+  def orders_items_info
+    @jobs = Job.find(:all, :include => :job_items)
+    @report_data = {}
+    @jobs.each do |job|
+      @report_data[job.id] = {:items => [], :name => job.to_s}
+      job.job_items.each do |job_item|
+        @report_data[job.id][:items] << {:item_name => job_item.item_name,
+                                     :purchase_part_id => (job_item.item.purchase_part_id rescue ''),
+                                     :color => job_item.color,
+                                     :quantity => job_item.quantity,
+                                     :width => job_item.width,
+                                     :height => job_item.height,
+                                     :depth => job_item.depth}
+      end
+    end
+  end
+  
   def sales
     @start_date = params[:start_date]
     @end_date   = params[:end_date]
