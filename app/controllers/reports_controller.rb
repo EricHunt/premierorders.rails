@@ -4,7 +4,7 @@ class ReportsController < ApplicationController
   end
   
   def orders_items_info
-    @jobs = Job.find(:all, :include => :job_items, :limit => 10)
+    @jobs = Job.find(:all, :include => :job_items)
     @report_data = {}
     @jobs.each do |job|
       @report_data[job.id] = {:items => [], :name => job.to_s}
