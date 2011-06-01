@@ -4,7 +4,7 @@ class ReportsController < ApplicationController
   end
   
   def orders_items_info
-    @jobs = Job.find(:all, :include => :job_items)
+    @jobs = Job.find(:all, :include => :job_items, :limit => 10)
     @report_data = {}
     @jobs.each do |job|
       @report_data[job.id] = {:items => [], :name => job.to_s}
@@ -17,6 +17,15 @@ class ReportsController < ApplicationController
                                      :height => job_item.height,
                                      :depth => job_item.depth}
       end
+    end
+    
+    respond_to do |format|
+      format.html # show.html.erb
+      format.csv  {
+        headers["Content-Type"] ||= 'text/csv'
+        headers["Content-Disposition"] = "attachment; filename=\"orders_items_info.csv\""
+        render :layout => false
+      }# show.csv.erb
     end
   end
   
