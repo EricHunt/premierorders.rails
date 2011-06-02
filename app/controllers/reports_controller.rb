@@ -22,9 +22,39 @@ class ReportsController < ApplicationController
     respond_to do |format|
       format.html # show.html.erb
       format.csv  {
-        headers["Content-Type"] ||= 'text/csv'
-        headers["Content-Disposition"] = "attachment; filename=\"orders_items_info.csv\""
-        render :layout => false
+        
+        line_headers = ["Order Name","Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth"]
+        csv_options = {:force_quotes => true, :col_sep => ';'}
+        @report = ""
+        CSV.generate(@report,csv_options) do |csv|
+          #CSV.generate_line(headers,csv_options).html_safe
+          #@report.add_row(line_headers)
+          csv << line_headers
+          @report_data.each_pair do |key, job|
+            job[:items].each do |job_item| 
+              row = [
+                      job[:name],
+                      job_item[:item_name],
+                      job_item[:purchase_part_id],
+                      job_item[:color],
+                      job_item[:quantity],
+                      job_item[:width],
+                      job_item[:height],
+                      job_item[:depth]
+                    ]
+              #CSV.generate_line(row, csv_options).html_safe
+              #@report.add_row(row)
+              csv << row
+            end
+          end
+        end
+        
+        #headers["Content-Type"] ||= 'text/csv'
+        #headers["Content-Disposition"] = "attachment; filename=\"orders_items_info.csv\""
+        #render :layout => false
+        
+        send_data @report, :filename => 'orders_items_info.csv'
+        
       }# show.csv.erb
     end
   end
