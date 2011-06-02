@@ -4,7 +4,7 @@ class ReportsController < ApplicationController
   end
   
   def orders_items_info
-    @jobs = Job.find(:all, :include => :job_items, :limit => 10)
+    @jobs = Job.find(:all, :include => :job_items)
     @report_data = {}
     @jobs.each do |job|
       @report_data[job.id] = {:items => [], :name => job.to_s}
@@ -27,12 +27,10 @@ class ReportsController < ApplicationController
         csv_options = {:force_quotes => true, :col_sep => ';'}
         @report = ""
         FasterCSV.generate(@report,csv_options) do |csv|
-          #CSV.generate_line(headers,csv_options).html_safe
-          #@report.add_row(line_headers)
           csv << line_headers
           @report_data.each_pair do |key, job|
             job[:items].each do |job_item| 
-              row = [
+              csv << [
                       job[:name],
                       job_item[:item_name],
                       job_item[:purchase_part_id],
@@ -42,20 +40,12 @@ class ReportsController < ApplicationController
                       job_item[:height],
                       job_item[:depth]
                     ]
-              #CSV.generate_line(row, csv_options).html_safe
-              #@report.add_row(row)
-              csv << row
             end
           end
         end
-        
-        #headers["Content-Type"] ||= 'text/csv'
-        #headers["Content-Disposition"] = "attachment; filename=\"orders_items_info.csv\""
-        #render :layout => false
-        
         send_data @report, :filename => 'orders_items_info.csv'
         
-      }# show.csv.erb
+      }
     end
   end
   
