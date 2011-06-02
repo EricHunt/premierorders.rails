@@ -10,6 +10,7 @@ gem 'paperclip'
 gem 'jquery-rails'
 gem 'devise'
 gem 'json'
+gem 'fastercsv'
 
 # Use unicorn as the web server
 # gem 'unicorn'

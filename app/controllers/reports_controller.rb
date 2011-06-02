@@ -26,7 +26,7 @@ class ReportsController < ApplicationController
         line_headers = ["Order Name","Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth"]
         csv_options = {:force_quotes => true, :col_sep => ';'}
         @report = ""
-        CSV.generate(@report,csv_options) do |csv|
+        FasterCSV.generate(@report,csv_options) do |csv|
           #CSV.generate_line(headers,csv_options).html_safe
           #@report.add_row(line_headers)
           csv << line_headers
