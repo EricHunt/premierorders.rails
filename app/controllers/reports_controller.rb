@@ -4,10 +4,15 @@ class ReportsController < ApplicationController
   end
   
   def orders_items_info
-    @jobs = Job.find(:all, :include => :job_items)
+    @jobs = Job.find(:all, :include => [:job_items, :franchisee], :limit => 10)
     @report_data = {}
     @jobs.each do |job|
-      @report_data[job.id] = {:items => [], :name => job.to_s}
+      @report_data[job.id] = {:items => [],
+                              :name => job.to_s,
+                              :placement_date => job.placement_date,
+                              :franchisee => job.franchisee.franchise_name,
+                              :comment => job.comment
+                              }
       job.job_items.each do |job_item|
         @report_data[job.id][:items] << {:item_name => job_item.item_name,
                                      :purchase_part_id => (job_item.item.purchase_part_id rescue ''),
@@ -23,7 +28,7 @@ class ReportsController < ApplicationController
       format.html # show.html.erb
       format.csv  {
         
-        line_headers = ["Order Name","Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth"]
+        line_headers = ["Date","Franchisee", "Order Name","Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth", "Special Instructions"]
         csv_options = {:force_quotes => true, :col_sep => ';'}
         @report = ""
         FasterCSV.generate(@report,csv_options) do |csv|
@@ -31,6 +36,8 @@ class ReportsController < ApplicationController
           @report_data.each_pair do |key, job|
             job[:items].each do |job_item| 
               csv << [
+                      job[:placement_date],
+                      job[:franchisee],
                       job[:name],
                       job_item[:item_name],
                       job_item[:purchase_part_id],
@@ -38,7 +45,8 @@ class ReportsController < ApplicationController
                       job_item[:quantity],
                       job_item[:width],
                       job_item[:height],
-                      job_item[:depth]
+                      job_item[:depth],
+                      job[:comment]
                     ]
             end
           end
