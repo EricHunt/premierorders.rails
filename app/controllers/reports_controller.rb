@@ -11,7 +11,10 @@ class ReportsController < ApplicationController
                               :name => job.to_s,
                               :placement_date => job.placement_date,
                               :franchisee => job.franchisee.franchise_name,
-                              :comment => job.comment
+                              :comment => job.comment,
+                              :so_number => job.job_number,
+                              :mfg_plant => job.mfg_plant,
+                              :status => job.status
                               }
       job.job_items.each do |job_item|
         @report_data[job.id][:items] << {:item_name => job_item.item_name,
@@ -28,8 +31,8 @@ class ReportsController < ApplicationController
       format.html # show.html.erb
       format.csv  {
         
-        line_headers = ["Date","Franchisee", "Order Name","Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth", "Special Instructions"]
-        csv_options = {:force_quotes => true, :col_sep => ';'}
+        line_headers = ["Date","Franchisee", "Order Name", "SO Number", "Mfg Plant", "Status", "Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth", "Special Instructions"]
+        csv_options = {:force_quotes => true, :col_sep => ','}
         @report = ""
         FasterCSV.generate(@report,csv_options) do |csv|
           csv << line_headers
@@ -39,6 +42,9 @@ class ReportsController < ApplicationController
                       job[:placement_date],
                       job[:franchisee],
                       job[:name],
+                      job[:so_number],
+                      job[:mfg_plant],
+                      job[:status],                      
                       job_item[:item_name],
                       job_item[:purchase_part_id],
                       job_item[:color],
