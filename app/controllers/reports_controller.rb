@@ -28,7 +28,7 @@ class ReportsController < ApplicationController
     end
     
     respond_to do |format|
-      format.html # show.html.erb
+      format.html
       format.csv  {
         
         line_headers = ["Date","Franchisee", "Order Name", "SO Number", "Mfg Plant", "Status", "Item Name","Purchase Part ID","Color","Quantity","Width","Height","Depth", "Special Instructions"]
@@ -61,6 +61,22 @@ class ReportsController < ApplicationController
         
       }
     end
+  end
+  
+  def zh_items
+    @items = Item.simple_search([], 'zh ')
+    @report_data = @items.map{|a| a.attributes.sort}
+    
+    line_headers = @report_data.first.map{|a| a[0].camelize}
+    csv_options = {:force_quotes => true, :col_sep => ','}
+    @report = ""
+    FasterCSV.generate(@report,csv_options) do |csv|
+      csv << line_headers
+      @report_data.each do |item|
+        csv << item.map{|a| a[1].to_s}
+      end
+    end
+    send_data @report, :filename => 'zh_items.csv'
   end
   
   def sales
