@@ -32,6 +32,9 @@
       <% if can? :assign_role, @user %>
         <dt><%= f.label :roles %></dt>
         <dd><%= f.collection_select(:roles, Role.all, :id, :name, {:selected => @user.roles.map{|r| r.id}}, :multiple => true) %></dd>
+        <dt><%= f.label :group %></dt>
+        <dd><%= f.collection_select(:group_id, Group.all, :id, :name_and_categories) %></dd>
+        
       <% end %>
       <dt><%= f.label :password %></dt>
       <dd><%= f.password_field :password %></dd>

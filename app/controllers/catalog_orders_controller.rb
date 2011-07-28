@@ -3,8 +3,12 @@ class CatalogOrdersController < ApplicationController
   
   # GET /catalog_orders
   def index
-    respond_to do |format|
-      format.html 
+    if current_user.nil? or current_user.group.nil? or current_user.group.item_categories.empty?
+      redirect_to jobs_path
+    else
+      respond_to do |format|
+        format.html 
+      end
     end
   end
 

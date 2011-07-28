@@ -1,0 +1,16 @@
+<h1>Groups</h1>
+<div>
+<%= button_to 'New Group', new_group_path, :method => :get %>
+</div>
+<div>
+  <dl>
+<% @groups.each do |g| %>
+
+  <dt><%=g.name%></dt>
+  <dd>
+  <%= g.item_categories.map(&:category).join(', ') %>
+  </dd>
+
+<% end %>
+  </dl>
+</div>

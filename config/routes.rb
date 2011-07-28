@@ -78,6 +78,8 @@ PgRails::Application.routes.draw do
   end
 
   resources :users
+  
+  resources :groups
 
   resources :addresses
 

@@ -26,6 +26,8 @@
     <dd><%= @user.last_sign_in_at %></dd>
     <dt><%= label :user, :roles %></dt>
     <dd><%= @user.roles.map{|r| r.name}.join(", ") %></dd>
+    <dt><%= label :user, :group%></dt>
+    <dd><%= @user.group.name_and_categories %></dd>
   </dl>
 </div>
 

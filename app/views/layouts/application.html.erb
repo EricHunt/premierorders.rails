@@ -31,6 +31,10 @@
   <nav id="nav">
     <ul>
       <% if user_signed_in? %>
+        <% if current_user.group.item_categories.any?%>
+          <li><%= link_to "Catalog Orders", catalog_orders_path %></li>
+        <% end %>
+      
         <li><%= link_to Job.model_name.human.pluralize, jobs_path %></li>
 
         <% if can? :read, Franchisee %>
@@ -48,7 +52,11 @@
         <% if can? :manage, User %>
           <li><%= link_to User.model_name.human.pluralize, users_path %></li>
         <% end %>
-
+        
+        <% if can? :assign_role, User %>
+          <li><%= link_to Group.model_name.human.pluralize, groups_path %></li>
+        <% end %>
+        
         <% if can? :manage, ProductionBatch %>
           <li><%= link_to ProductionBatch.model_name.human.pluralize.titlecase, production_batches_path %></li>
         <% end %>

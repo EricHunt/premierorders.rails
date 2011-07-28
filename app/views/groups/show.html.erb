@@ -1,0 +1,7 @@
+<h1><%= @group.name %></h1>
+<dl>
+  <dt>Item Categories</dt>
+  <% @group.item_categories.each do |i| %>
+  <dd><%= i.category %></dd>
+  <% end %>
+</dl>

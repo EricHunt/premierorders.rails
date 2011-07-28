@@ -1,0 +1,29 @@
+<h1>New Group</h1>
+
+<%= form_for @group, :html => { :multipart => true } do |f| %>
+  <% if @group.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@group.errors.count, "error") %> prohibited this group from being saved:</h2>
+      <ul>
+      <% @group.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form_fields">
+    <dl>
+      
+      <dt><%= f.label :name %></dt>
+      <dd><%= f.text_field :name, {:class => 'required', :minlength => '2'} %></dd>
+      
+      <dt><%= f.label :item_categories %></dt>
+      <dd><%= collection_select(:group, :item_category_ids, @item_categories, :id, :category,{},{:multiple => true}) %></dd>
+      
+      <dt></dt>
+      <dd><%= f.submit 'Create Group'%></dd>
+    </dl>
+  </div>
+  
+<% end %>

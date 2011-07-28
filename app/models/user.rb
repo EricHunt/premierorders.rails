@@ -5,6 +5,7 @@ class User < ActiveRecord::Base
   has_and_belongs_to_many :roles, :join_table => :user_roles
   has_many :franchisee_contacts, :dependent => :destroy
   has_many :franchisees, :through => :franchisee_contacts
+  belongs_to :group
 
   # Include default devise modules. Others available are:
   # :token_authenticatable, :confirmable, :lockable, :timeoutable, :registerable,

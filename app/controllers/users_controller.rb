@@ -42,6 +42,7 @@ class UsersController < ApplicationController
           @user.roles << role
         end
       end
+      @user.group_id = params[:user][:group_id]
     end
 
     respond_to do |format|
@@ -72,6 +73,7 @@ class UsersController < ApplicationController
           end
         end
       end
+      @user.group_id = params[:user][:group_id]
     else
       logger.info("Can't set user roles.")
     end
