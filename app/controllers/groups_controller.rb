@@ -12,10 +12,25 @@ class GroupsController < ApplicationController
     @group.name = "Group#{Group.count+ 1}"
   end
   
+  def edit
+    @item_categories = ItemCategory.order('category asc').all
+    @group = Group.find(params[:id])
+  end
+
+  def update
+    @group = Group.find(params[:id])
+    @group.attributes = params[:group]
+    if @group.save
+      redirect_to :action => "index"
+    else
+      render :action => 'edit', :id => @group.id
+    end
+  end
+
   def create
     @group = Group.new(params[:group])
     if @group.save
-      render :action => "show"
+      redirect_to :action => "index"
     else
       render :action => 'new'
     end  

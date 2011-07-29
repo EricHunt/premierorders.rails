@@ -2,15 +2,21 @@
 <div>
 <%= button_to 'New Group', new_group_path, :method => :get %>
 </div>
+<p></p>
 <div>
-  <dl>
+  <table>
 <% @groups.each do |g| %>
-
-  <dt><%=g.name%></dt>
-  <dd>
-  <%= g.item_categories.map(&:category).join(', ') %>
-  </dd>
-
+  <tr>
+    <td><%=g.name%></td>
+    <td>
+      <%= g.item_categories.map(&:category).join(', ') %>
+    </td>
+    <td><%= link_to 'edit', edit_group_path(g) %></td>
+  </tr>
 <% end %>
-  </dl>
+  </table>
+  <p></p>
+  <div>
+<%= button_to 'New Group', new_group_path, :method => :get %>
+</div>
 </div>
