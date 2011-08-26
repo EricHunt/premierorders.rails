@@ -34,7 +34,7 @@
     <dd>
       <table>
         <tr><%= render :partial => 'jobs/job_cols_headers' %></tr>
-        <% @franchisee.jobs.each do |job| %>
+        <% @franchisee.jobs.order('placement_date desc').each do |job| %>
           <tr><%= render :partial => 'jobs/job_cols', :locals => {:job => job} %></tr>
         <% end %>
       </table>
