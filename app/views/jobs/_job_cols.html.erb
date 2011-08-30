@@ -3,8 +3,8 @@
       <td><%= job.sales_categories -%></td>
       <td><%= job.placement_date %></td>
       <% if current_user.role?(:product_admin, :customer_service, :accounting, :admin) %>
-        <td><span class="job_date" id="job[<%=job.id%>][due_date]"><%= job.due_date %></span></td>
-        <td><span class="job_date" id="job[<%=job.id%>][ship_date]"><%= job.ship_date %></span></td>
+        <td><span class="job_date" id="job[<%=job.id%>][due_date]"><%= job.due_date || "date not set" %></span></td>
+        <td><span class="job_date" id="job[<%=job.id%>][ship_date]"><%= job.ship_date || "date not set" %></span></td>
         <td><%= job_status_select(job) -%></td>
         <td><%= job_ship_method_select(job) -%></td>
       <% else %>

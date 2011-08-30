@@ -137,6 +137,14 @@ class JobsController < ApplicationController
         end
       end
 
+      if params[:job][:ship_date] == "date not set"
+        params[:job][:ship_date] = nil
+      end
+
+      if params[:job][:due_date] == "date not set"
+        params[:job][:due_date] = nil
+      end
+
       if @job.update_attributes(params[:job])
         if @job.status == 'Confirmed' && @job.status != prior_status
           OrderMailer.order_placed_email(@job).deliver
@@ -150,7 +158,7 @@ class JobsController < ApplicationController
           )
 
           if @job.status == 'Shipped' 
-            @job.ship_date ||= DateTime.now
+            @job.ship_date = DateTime.now
             @job.save
             OrderMailer.order_shipped_email(@job).deliver
           end
