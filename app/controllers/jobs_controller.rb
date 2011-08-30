@@ -158,7 +158,7 @@ class JobsController < ApplicationController
           )
 
           if @job.status == 'Shipped' 
-            @job.ship_date = DateTime.now
+            @job.ship_date ||= DateTime.now
             @job.save
             OrderMailer.order_shipped_email(@job).deliver
           end
