@@ -78,12 +78,12 @@
 
     <dl class="due_date">
       <dt><%= label :job, :due_date %></dt>
-      <dd><%= @job.due_date %></dd>
+      <dd><%= date_formatted @job.due_date %></dd>
     </dl>
 
     <dl class="ship_date">
       <dt><%= label :job, :ship_date %></dt>
-      <dd><%= @job.ship_date %></dd>
+      <dd><%= time_formatted @job.ship_date %></dd>
     </dl>
 
     <dl class="ship_method">

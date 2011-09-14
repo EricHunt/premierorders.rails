@@ -1,15 +1,15 @@
       <td><%= link_to job.name, job_path(job) %></td>
       <td><%= job.job_number %></td>
       <td><%= job.sales_categories -%></td>
-      <td><%= job.placement_date %></td>
+      <td><%= time_formatted job.placement_date %></td>
       <% if current_user.role?(:product_admin, :customer_service, :accounting, :admin) %>
-        <td><span class="job_date" id="job[<%=job.id%>][due_date]"><%= job.due_date || "date not set" %></span></td>
-        <td><span class="job_date" id="job[<%=job.id%>][ship_date]"><%= job.ship_date || "date not set" %></span></td>
+        <td><span class="job_date" id="job[<%=job.id%>][due_date]"><%= job.due_date.nil? ? "date not set" : date_formatted(job.due_date) %></span></td>
+        <td><span class="job_date" id="job[<%=job.id%>][ship_date]"><%= job.ship_date.nil? ? "date not set" : date_formatted(job.ship_date) %></span></td>
         <td><%= job_status_select(job) -%></td>
         <td><%= job_ship_method_select(job) -%></td>
       <% else %>
-        <td><%= job.due_date %></td>
-        <td><%= job.ship_date %></td>
+        <td><%=date_formatted job.due_date %></td>
+        <td><%=date_formatted job.ship_date %></td>
         <td><%= job.status %></td>
         <td><%= job.ship_method %></td>
       <% end %>

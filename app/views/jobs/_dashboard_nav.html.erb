@@ -9,7 +9,7 @@
     <tr>
       <td><%= link_to job.name, job_path(job) %></td>
       <td><%= job.job_number %></td>
-      <td><%= job.due_date %></td>
+      <td><%= date_formatted job.due_date %></td>
       <% if can? :manage, job %>
         <td style="white-space: nowrap;">
             Status:      <%= job_status_select(job) %><br/>

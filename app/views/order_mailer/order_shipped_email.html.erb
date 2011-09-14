@@ -9,7 +9,7 @@
     <p>
       Your order <%= @job.job_number %> ("<%= @job.name %>") was shipped 
       from our <%= @job.mfg_plant %> manufacturing facility 
-      on <%= @job.ship_date.strftime("%m/%d/%Y") %>.
+      on <%= date_formatted @job.ship_date %>.
     </p>
 
     <p>Please feel free to contact us with any questions you may have.</p>
