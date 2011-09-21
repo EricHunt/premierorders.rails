@@ -44,7 +44,7 @@ var ajax_date = function(node) {
       var input = $('<input name="'+$(this).attr('id')+'" type="text"/>').attr('size', current.length + 1).val(current);
 
       input.datepicker({
-        dateFormat: 'yy-mm-dd',
+        dateFormat: 'mm-dd-yy',
         defaultDate: current,
         onClose : function(dateText, node) {
           if (dateText && dateText !== current) post_update($(this), update_notice);
