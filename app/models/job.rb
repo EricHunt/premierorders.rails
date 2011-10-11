@@ -66,6 +66,10 @@ class Job < ActiveRecord::Base
     STATUS_GROUPS.select{|v| v.include?(before)} != STATUS_GROUPS.select{|v| v.include?(after)}
   end
 
+  def tl_customer
+    franchisee.customer_category == Franchisee::CUSTOMER_CATEGORIES.index("TL")
+  end
+
   def is_manageable_by(user)
     (franchisee && franchisee.users.any?{|u| u.id == user.id}) || 
     primary_contact == user || 

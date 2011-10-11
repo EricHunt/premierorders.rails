@@ -12,5 +12,7 @@ class Franchisee < ActiveRecord::Base
            :conditions => {:address_type => 'shipping'}
 
   has_many :jobs
+
+  CUSTOMER_CATEGORIES = ["TL", "PG"]
 end
 

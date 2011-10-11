@@ -81,6 +81,8 @@
       <dd><%= f.text_field :website %></dd>
       <dt><%= f.label :credit_status %></dt>
       <dd><%= f.select(:credit_status, [["Green", "Green"], ["Yellow", "Yellow"], ["Red", "Red"]]) %></dd>
+      <dt><%= f.label :customer_category %></dt>
+      <dd><%= f.select(:customer_category, Franchisee::CUSTOMER_CATEGORIES.map{|a| [a, Franchisee::CUSTOMER_CATEGORIES.index(a)]})%> </dd>
       <dt><%= f.label :notes %></dt>
       <dd><%= f.text_area :notes %></dd>
       <% unless @franchisee.new_record? %>

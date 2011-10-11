@@ -5,8 +5,8 @@
     <th>Customer Name</th>
     <th>Phone</th>
     <th>Contact Email</th>
-    <th>Edit</th>
-    <th>Delete</th>
+    <th><% if can? :update, Franchisee %>Edit<% end %></th>
+    <th><% if can? :destroy, Franchisee %>Delete<% end %></th>
   </tr>
 
 <% @franchisees.each do |franchisee| %>
@@ -23,5 +23,5 @@
 <br />
 
 <% content_for :local_nav do %>
-  <%= link_to 'New Customer', new_franchisee_path %>
+  <% if can? :create, Franchisee %><%= link_to 'New Customer', new_franchisee_path %><% end %>
 <% end %>

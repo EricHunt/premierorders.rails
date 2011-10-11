@@ -48,7 +48,9 @@ class Ability
     end
 
     if user.role? :franchise_support
-      can [:read], [Job, JobProperty, JobItem, JobItemProperty, Franchisee, Address]
+      can [:read], [JobProperty, JobItem, JobItemProperty, Address]
+      can :read, Job, :tl_customer => true
+      can :read, Franchisee, :customer_category => Franchisee::CUSTOMER_CATEGORIES.index("TL")
       can [:create, :update, :destroy], Job do |job|
         (job.status.nil? || job.status == 'Created')
       end
